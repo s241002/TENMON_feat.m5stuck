@@ -1,13 +1,23 @@
 import json
 import urllib.request
 
-API = "https://www.astropical.space/api.php?table=stars&magmax=5&limit=6000&format=json"
+API = "https://www.astropical.space/api.php?table=stars&magmax=5&limit=5000&format=json"
 
 def fetch(magmax=5, limit=5000):
     url = API.format(magmax=magmax, limit=limit)
-    with urllib.request.urlopen(url) as r:
+
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (GitHub Actions)"
+        }
+    )
+
+    with urllib.request.urlopen(req) as r:
         raw = r.read().decode("utf-8")
+
     return json.loads(raw)
+
 
 def main():
     magmax = 5
@@ -41,3 +51,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
