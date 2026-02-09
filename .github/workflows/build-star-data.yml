@@ -1,1 +1,34 @@
+name: build star data
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: build stars json
+        run: |
+          python tools/build_stars.py
+
+      - name: commit and push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add data/stars_min.json
+          git diff --cached --quiet || git commit -m "update stars_min.json"
+          git push
 
