@@ -26,6 +26,7 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git add data/stars_min.json
-          git commit -m "update stars_min.json" || echo "no changes"
+          git diff --cached --quiet || git commit -m "update stars_min.json"
           git push
+
 
