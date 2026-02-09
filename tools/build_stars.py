@@ -1,7 +1,7 @@
 import json
 import urllib.request
 
-API = "https://www.astropical.space/api.php?table=stars&magmax={magmax}&limit={limit}&format=json"
+API = "https://www.astropical.space/api.php?table=stars&magmax=5&limit=6000&format=json"
 
 def fetch(magmax=5, limit=5000):
     url = API.format(magmax=magmax, limit=limit)
@@ -39,4 +39,5 @@ def main():
     print(f"saved: data/stars_min.json  count={len(out)}  magmax={magmax}")
 
 if __name__ == "__main__":
+
     main()
