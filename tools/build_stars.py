@@ -1,54 +1,63 @@
+import os
+import ssl
 import json
 import urllib.request
 
-API = "https://www.astropical.space/api.php?table=stars&magmax=5&limit=5000&format=json"
+# Hip Stars API (astropical.space)
+API = "https://www.astropical.space/api.php?table=stars&magmax={magmax}&limit={limit}&offset={offset}&format=json"
 
-def fetch(magmax=5, limit=5000):
-    url = API.format(magmax=magmax, limit=limit)
+def fetch_chunk(magmax, limit, offset):
+    url = API.format(magmax=magmax, limit=limit, offset=offset)
+
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
 
     req = urllib.request.Request(
         url,
         headers={
-            "User-Agent": "Mozilla/5.0 (GitHub Actions)"
+            "User-Agent": "Mozilla/5.0",
+            "Accept": "application/json"
         }
     )
 
-    with urllib.request.urlopen(req) as r:
-        raw = r.read().decode("utf-8")
-
-    return json.loads(raw)
-
+    with urllib.request.urlopen(req, context=ctx, timeout=30) as r:
+        return json.loads(r.read().decode("utf-8"))
 
 def main():
+    os.makedirs("data", exist_ok=True)
+
     magmax = 5
-    limit = 6000
+    chunk = 200
+    offset = 0
+    all_stars = []
 
-    data = fetch(magmax=magmax, limit=limit)
+    print("Fetching stars ...")
+    while True:
+        data = fetch_chunk(magmax, chunk, offset)
+        stars = data.get("hipstars", [])
+        if not stars:
+            break
+        all_stars.extend(stars)
+        offset += chunk
 
-    stars = data.get("hipstars", [])
+    # reduce to needed keys
     out = []
+    for s in all_stars:
+        if "hip" in s and "ra" in s and "de" in s and "mag" in s:
+            out.append({
+                "h": int(s["hip"]),      # HIP番号
+                "r": float(s["ra"]),     # 赤経
+                "d": float(s["de"]),     # 赤緯
+                "m": float(s["mag"]),    # 等級
+            })
 
-    for s in stars:
-        # 必要なキーが揃ってるものだけ
-        if "hip" not in s or "ra" not in s or "de" not in s or "mag" not in s:
-            continue
-        out.append({
-            "h": int(s["hip"]),
-            "r": float(s["ra"]),
-            "d": float(s["de"]),
-            "m": float(s["mag"]),
-        })
-
-    # 明るい順に並べる（magnitudeが小さいほど明るい）
     out.sort(key=lambda x: x["m"])
 
-    # 保存
     with open("data/stars_min.json", "w", encoding="utf-8") as f:
-        json.dump(out, f, ensure_ascii=False, separators=(",", ":"))
+        json.dump(out, f, separators=(",", ":"), ensure_ascii=False)
 
-    print(f"saved: data/stars_min.json  count={len(out)}  magmax={magmax}")
+    print(f"Saved stars_min.json ({len(out)} stars)")
 
 if __name__ == "__main__":
-
     main()
-
