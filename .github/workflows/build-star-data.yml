@@ -1,12 +1,7 @@
 name: build star data
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   build:
@@ -20,15 +15,16 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: build stars json
+      - name: build all data
         run: |
+          pip install --upgrade pip
           python tools/build_stars.py
+          python tools/build_constellations.py
 
       - name: commit and push
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add data/stars_min.json
-          git diff --cached --quiet || git commit -m "update stars_min.json"
+          git add data/stars_min.json data/constellation_lines.json
+          git diff --cached --quiet || git commit -m "update star and constellation data"
           git push
-
