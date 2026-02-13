@@ -1,35 +1,35 @@
-import os
 import json
-from astroquery.vizier import Vizier
+import os
 
 def main():
     os.makedirs("data", exist_ok=True)
 
-    print("Downloading Hipparcos catalog...")
+    # 読み込み
+    with open("data/stars_raw.json", "r", encoding="utf-8") as f:
+        raw = json.load(f)
 
-    Vizier.ROW_LIMIT = -1
-    catalog = Vizier(columns=["HIP", "RA_ICRS", "DE_ICRS", "Vmag"])
-    result = catalog.query_constraints(catalog="I/239/hip_main", Vmag="<5")
+    stars = raw.get("hipstars", [])
 
-    stars = result[0]
+    reduced = []
 
-    out = []
-
-    for row in stars:
-        if row["Vmag"] is not None:
-            out.append({
-                "h": int(row["HIP"]),
-                "r": float(row["RA_ICRS"]),
-                "d": float(row["DE_ICRS"]),
-                "m": float(row["Vmag"]),
+    for s in stars:
+        # 必要なキーだけ抽出
+        if all(k in s for k in ["hip", "ra", "de", "mag"]):
+            reduced.append({
+                "h": int(s["hip"]),     # HIP番号
+                "r": float(s["ra"]),    # 赤経
+                "d": float(s["de"]),    # 赤緯
+                "m": float(s["mag"]),   # 等級
             })
 
-    out.sort(key=lambda x: x["m"])
+    # 等級順にソート（明るい順）
+    reduced.sort(key=lambda x: x["m"])
 
+    # 保存（超軽量フォーマット）
     with open("data/stars_min.json", "w", encoding="utf-8") as f:
-        json.dump(out, f, separators=(",", ":"))
+        json.dump(reduced, f, separators=(",", ":"), ensure_ascii=False)
 
-    print(f"Saved stars_min.json ({len(out)} stars)")
+    print(f"Reduced: {len(reduced)} stars saved.")
 
 if __name__ == "__main__":
     main()
